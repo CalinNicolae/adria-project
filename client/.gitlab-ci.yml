@@ -1,0 +1,51 @@
+image: registry.ci.infra.lan:5000/project-2:client-QA
+
+stages:
+  - QA
+  - deploy
+
+before_script:
+  - ln -s /ci/node_modules .
+
+build:
+  stage: QA
+  only:
+    - main
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+
+validateHTML:
+  stage: QA
+  only:
+    - main
+  script:
+    - npm run validate-html
+
+SonarQube:
+  stage: QA
+  needs:
+    - validateHTML
+  only:
+    - main
+  script:
+    - node -v
+    - npm run sonar-ci
+
+deployment:
+  stage: deploy
+  image: registry.ci.infra.lan:5000/project-2:client-deploy
+  needs:
+    - build
+    - validateHTML
+    - SonarQube
+  variables:
+    year: 2024-2025
+  only:
+    - main
+  script:
+    - ssh gitlab-runner@project-2.ci.infra.lan "mv /var/www/html/${year}/${CI_PROJECT_NAMESPACE##*/}/config.json /tmp/config-${CI_PROJECT_NAMESPACE##*/}.json"
+    - rsync -av --delete ./dist/ gitlab-runner@project-2.ci.infra.lan:/var/www/html/${year}/${CI_PROJECT_NAMESPACE##*/}
+    - ssh gitlab-runner@project-2.ci.infra.lan "mv /tmp/config-${CI_PROJECT_NAMESPACE##*/}.json /var/www/html/${year}/${CI_PROJECT_NAMESPACE##*/}/config.json"

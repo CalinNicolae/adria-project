@@ -1,0 +1,560 @@
+# Cspell:disable
+openapi: 3.0.1
+info:
+  title: Croptek API
+  description: API the CropTek Application uses to communicate with the server.
+  version: 1.0.0
+  x-authors:
+    - Lander Debeir
+    - Kasper Declercq
+    - Gianni De Jaeger
+    - Szymon Grzesko
+    - Zalán Hegedüs
+    - Cali Nicolae
+
+servers:
+  - url: http://localhost:8080/
+    description: Local development
+# Vert.x bug:
+# Never uncommented production URL, unless for testing production environment from the local machine
+# The program will not work if the production URL is uncommented
+#  - url: https://project-2.ti.howest.be/2024-2025/group-05/
+#    description: Production
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      description: Check the health of the application
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Application is healthy
+        "500":
+          description: Application is unhealthy
+
+  /api/subscribe:
+    post:
+      summary: Subscribe to notifications
+      description: Subscribe to receive notifications
+      operationId: subscribe
+      tags:
+        - Notifications
+      requestBody:
+        description: Data required to subscribe to notifications
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                  description: URL to receive notifications
+                keys:
+                  type: object
+                  properties:
+                    p256dh:
+                      type: string
+                      description: Public key for encryption
+                    auth:
+                      type: string
+                      description: Authentication secret
+      responses:
+        "201":
+          description: Subscription successful
+        "400":
+          description: Invalid input or missing required fields
+        "500":
+          description: Internal server error
+
+  /api/farms:
+    get:
+      summary: Get all farms
+      operationId: getAllFarms
+      description: Returns all Farms without requiring an adriaId.
+      tags:
+        - Farms
+      responses:
+        '200':
+          description: The list of all Farms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Farm'
+        '500':
+          description: Internal server error
+
+  /api/users/{adriaId}/farms:
+    get:
+      summary: Get a user's farms
+      operationId: getUserFarms
+      description: Returns all Farms that belong to the given adriaId.
+      tags:
+        - Farms
+      parameters:
+        - name: adriaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The list of Farms of the User
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Farm'
+        '500':
+          description: Internal server error
+
+  /api/farmFields/{farmId}:
+    get:
+      summary: Get all a farm's fields.
+      operationId: getFarmFields
+      description: Returns all FarmFields for the given farmId.
+      tags:
+        - FarmFields
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The list of FarmFields of the Farm
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FarmField'
+        '500':
+          description: Internal server error
+
+  /api/plantedCrops/{farmId}/{farmFieldId}:
+    get:
+      summary: Get the planted crops of a farm.
+      operationId: getPlantedCrops
+      description: Fetches all PlantedCrops associated with a specific FarmField.
+      tags:
+        - Crops
+      parameters:
+        - name: farmId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: farmFieldId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A list of all PlantedCrops in the specified FarmField.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlantedCrop'
+        '500':
+          description: Internal server error
+
+  /api/cropTypes:
+    get:
+      summary: Get all crop types
+      operationId: getAllCropTypes
+      description: Returns the list of all crop types in the system.
+      tags:
+        - Crop types
+      responses:
+        '200':
+          description: The list of all crop types un the system
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CropType'
+        '500':
+          description: Internal server error
+
+  /api/drones:
+    get:
+      summary: Get all Drones
+      operationId: getAllDrones
+      description: Returns the list of all Drones in the system.
+      tags:
+        - Drones
+      responses:
+        '200':
+          description: The list of all Drones in the system
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Drone'
+        '500':
+          description: Internal server error
+
+  /api/users/{adriaId}/drones:
+    get:
+      summary: Get a user's drones
+      operationId: getUserDrones
+      description: Returns the list of all Drones for the given adriaId.
+      tags:
+        - Drones
+      parameters:
+        - name: adriaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The list of Drones belonging to this User
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Drone'
+        '500':
+          description: Internal Server error
+
+  /api/drones/{droneId}/return:
+    patch:
+      summary: Return a drone
+      operationId: returnDrone
+      description: Returns a drone to the system.
+      tags:
+        - Drones
+      parameters:
+        - name: droneId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Drone returned successfully
+        '400':
+          description: Invalid input or missing required fields
+        '500':
+          description: Internal server error
+
+  /api/drones/{droneId}/status:
+    patch:
+      summary: Set a drone's activity
+      operationId: setDroneActivity
+      description: Updates the activity of a Drone (given their droneId) to the given activity (enum DroneActivity).
+      tags:
+        - Drones
+      parameters:
+        - name: droneId
+          in: path
+          required: true
+          description: The ID of the Drone to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Data required to update the activity of the Drone
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                activity:
+                  type: string
+                  description: The new DroneActivity
+                  enum:
+                    - PASSIVE
+                    - PLANTING
+                    - WATERING
+                    - HARVESTING
+                    - CHARGING
+                    - AUTO
+      responses:
+        '204':
+          description: Drone activity updated successfully
+        '404':
+          description: Drone not found
+        '500':
+          description: Internal server error
+
+  /api/users/{adriaId}/drones/rent:
+    patch:
+      summary: Rent a drone
+      operationId: rentDrone
+      description: Assigns a random available drone to the user.
+      tags:
+        - Drones
+      parameters:
+        - name: adriaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Drone Rented successfully
+        '400':
+          description: Invalid input or no available drones
+        '500':
+          description: Internal server error
+
+  /api/users/{adriaId}/notifications:
+    get:
+      summary: Get notifications
+      operationId: getUserNotifications
+      description: Retrieves notifications for the user.
+      tags:
+        - Notifications
+      parameters:
+        - name: adriaId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+        '400':
+          description: Invalid input
+        '500':
+          description: Internal server error
+
+  /api/notifications/{notificationId}:
+    patch:
+      summary: Mark a notification as read or unread
+      operationId: setNotificationRead
+      description: Sets a notification read status.
+      tags:
+        - Notifications
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          description: The ID of the Notification to update
+          schema:
+            type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                read:
+                  type: boolean
+                  description: New value of the "read" property
+      responses:
+        '204':
+          description: Notification read status updated successfully
+        '404':
+          description: Notification not found
+        '500':
+          description: Internal server error
+  /api/users/{adriaId}/statistics:
+    get:
+      summary: Get statistics for a specific user
+      operationId: getUserStatistics
+      description: Retrieves statistics for a specific user
+      tags:
+        - Statistics
+      parameters:
+        - name: adriaId
+          in: path
+          required: true
+          description: The ID of the user to get the notifications for
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The list of the statistics for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Statistic'
+
+components:
+  schemas:
+    Farm:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the farm
+        userId:
+          type: string
+          format: uuid
+          description: AdriaId of the owner
+        name:
+          type: string
+          description: Name of the farm
+
+    Drone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Unique identifier for the drone"
+        userId:
+          type: string
+          format: uuid
+          description: "AdriaId of the owner"
+        manufacturingDate:
+          type: string
+          format: date
+          description: "Date the drone was manufactured"
+        functional:
+          type: boolean
+          description: "Indicates if the drone is currently functional"
+        needsRepair:
+          type: boolean
+          description: "Indicates if the drone needs repair"
+        batteryLevel:
+          type: integer
+          description: "Battery level of the drone (percentage)"
+        currentActivity:
+          type: string
+          description: "Current activity of the drone"
+          enum:
+            - PASSIVE
+            - PLANTING
+            - WATERING
+            - HARVESTING
+            - CHARGING
+
+    FarmField:
+      type: object
+      properties:
+        farmId:
+          type: integer
+          description: "Unique identifier for the farm field"
+        farmFieldId:
+          type: integer
+          description: "ID of the farm"
+        name:
+          type: string
+          description: "Name of the farm field"
+
+    PlantedCrop:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Unique identifier for the planted crop"
+        typeId:
+            type: integer
+            description: "Unique Identifier of the crop type"
+        farmId:
+          type: integer
+          description: "ID of the farm"
+        farmFieldId:
+          type: integer
+          description: "ID of the field where the crop is planted"
+        harvest:
+          type: string
+          format: date-time
+          description: "Expected or actual harvest date of the crop"
+        planted:
+          type: string
+          format: date-time
+          description: "Date when the crop was planted"
+
+    CropType:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Unique identifier for the crop type"
+        name:
+          type: string
+          description: "Name of the crop type"
+        minGrowthDays:
+          type: integer
+          description: "Minimum growth days required for the crop"
+        maxGrowthDays:
+          type: integer
+          description: "Maximum growth days required for the crop"
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: "Unique identifier for the notification"
+        userId:
+          type: string
+          format: uuid
+          description: "ID of the user whose notification this is"
+        title:
+          type: string
+          description: "Title of the notification"
+        message:
+          type: string
+          description: "Message of the notification"
+        read:
+          type: boolean
+          description: "Whether the notification is marked as read (true) or unread (false)"
+
+    Subscription:
+      type: object
+      required:
+        - endpoint
+        - keys
+      properties:
+        endpoint:
+          type: string
+          description: The endpoint URL for the push subscription.
+        keys:
+          $ref: '#/components/schemas/Keys'
+    Keys:
+        type: object
+        required:
+          - p256dh
+          - auth
+        properties:
+          p256dh:
+            type: string
+            description: User agent public key.
+          auth:
+            type: string
+            description: Authentication secret.
+    Statistic:
+      type: object
+      required:
+        - name
+        - values
+      properties:
+        name:
+          type: string
+          description: The name of the statistic
+        values:
+          $ref: '#/components/schemas/Values'
+    Values:
+      type: object
+      required:
+        - type
+      additionalProperties:
+        type: integer
+

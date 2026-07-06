@@ -1,0 +1,56 @@
+image: registry.ci.infra.lan:5000/project-2:server-build_QA
+
+stages:
+  - build
+  - QA
+  - deploy
+
+build-jar:
+  stage: build
+  only:
+    - main
+  except:
+    changes:
+      - documents/**/*
+  script:
+    - gradle shadowJar
+  artifacts:
+    untracked: false
+    paths:
+      - build/libs/
+
+testing:
+  stage: QA
+  only:
+    - main
+  needs:
+    - build-jar
+  except:
+    changes:
+      - documents/**/*
+  script:
+    - rm src/main/resources/config/config.properties
+    - mv "${config}" src/main/resources/config/config.properties
+    - gradle clean check --info
+    - gradle qa
+  artifacts:
+    when: always
+    reports:
+      junit: build/test-results/**/TEST-*.xml
+
+deployment:
+  stage: deploy
+  image: registry.ci.infra.lan:5000/project-2:server-deploy
+  variables:
+    year: 2024-2025
+  only:
+    - main
+  except:
+    changes:
+      - documents/**/*
+  script:
+    - mv build/libs/*.jar ${CI_PROJECT_NAMESPACE##*/}.jar
+    - mv src/main/resources/webapi.yaml openapi-group-${CI_PROJECT_NAMESPACE:(-2)}.yaml
+    - rsync -e "ssh" openapi-group-${CI_PROJECT_NAMESPACE:(-2)}.yaml gitlab-runner@project-2.ci.infra.lan:/opt/${year}/monitor/specifications/
+    - rsync -e "ssh" ${CI_PROJECT_NAMESPACE##*/}.jar gitlab-runner@project-2.ci.infra.lan:/opt/${year}/${CI_PROJECT_NAMESPACE##*/}
+    - ssh gitlab-runner@project-2.ci.infra.lan sudo systemctl restart ${CI_PROJECT_NAMESPACE##*/}
