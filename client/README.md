@@ -4,9 +4,6 @@ This is the client-side start project for the Analysis and Development project.
 
 Create your client-side **VUE** project in this repo.
 
-## Important public urls  
-* Web project: https://project-2.ti.howest.be/2024-2025/group-05/
-* Sonar reports: https://sonarqube.ti.howest.be/dashboard?id=2024.ad-project.adria.05.client
 
 ## Please complete the following instructions before committing the **final version** on the project
 Please **add** any **instructions** required to: 
