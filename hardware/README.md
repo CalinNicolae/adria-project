@@ -1,4 +1,4 @@
-# Analysis & Development Project - Adria 2084 - Raspberry pi project
+# Analysis & Development Project - Adria 2084 - Raspberry pi
 
 This project provides a simple API for controlling LEDs and a rotor connected to a Raspberry Pi with FastAPI.
 
@@ -26,12 +26,6 @@ This project provides a simple API for controlling LEDs and a rotor connected to
 This will: 
 - spin the rotor
 - Control animation patterns of LEDs
-
-### Demo video
-<video width="600" controls>
-  <source src="./finding_executor_demo.mov" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
 
 ## Requirements
 ### Hardware
